@@ -383,7 +383,7 @@
 
   toggleCompareBtn.addEventListener('click', ()=>{
     compareMode=!compareMode;
-    toggleCompareBtn.textContent=compareMode?'Comparar (ON)':'Modo Comparar';
+    toggleCompareBtn.textContent=compareMode?'Compare (ON)':'Click to compare';
     if(!compareMode){ selectedForCompare.clear(); document.querySelectorAll('.compare-checkbox').forEach(cb=>cb.checked=false); }
   });
 
@@ -403,7 +403,7 @@
   }
 
   fetchBtn.addEventListener('click', async ()=>{
-    gallery.innerHTML='<div class="notice">Buscando fotos…</div>';
+    gallery.innerHTML='<div class="notice">Searching for photos…</div>';
     let photos=[];
     if(cameraFilter.value==='apod'){
       photos=await fetchAPOD();
