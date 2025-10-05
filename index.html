@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Interative Space Atlas (ISA)</title>
+
+  <!-- OpenSeadragon -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js" defer></script>
+
+  <style>
+    h1{
+        color: #fb6600;
+    }
+    :root{
+      --bg:#05060a;
+      --card-bg: rgba(255,255,255,0.04);
+      --accent:#fb6600;
+      --muted:#98a0b3;
+      --blue:#3b82f6;
+      --glass: rgba(255,255,255,0.03);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{
+    height:100%; 
+    margin:0; 
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    color:#e6eef8;
+    background:radial-gradient(circle at 10% 10%, rgba(59,130,246,0.06), transparent 20%), var(--bg);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;}
+
+    header{
+        padding:20px;
+        text-align:center;
+        border-bottom:1px solid rgba(255,255,255,0.03);
+        backdrop-filter: blur(4px);}
+    header h1{
+        margin:0;
+        font-size:1.5rem;
+        color:var(--accent);
+        text-shadow: 0 0 12px rgba(255,59,59,0.12);}
+    header p{
+        margin:6px 0 0;
+        color:var(--muted);
+        font-size:0.95rem;}
+
+    .topbar{
+        display:flex;
+        gap:12px;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        flex-wrap:wrap;}
+    .control, .select, .btn {
+        background:var(--glass);
+        border-radius:12px;
+        padding:8px 10px;
+        border:1px solid rgba(255,255,255,0.03);
+        color:inherit;}
+    input[type="number"]{
+        width:110px;
+        padding:8px 10px;
+        border-radius:10px;
+        border:none;
+        background:transparent;
+        color:inherit;
+        outline:none;
+        font-size:1rem;
+        text-align:center;}
+    button.btn{
+        background:linear-gradient(180deg,var(--accent), #fb6600);
+        color:white;
+        border:none;
+        cursor:pointer;
+        padding:9px 14px;
+        border-radius:10px;
+        font-weight:600;
+        box-shadow:0 6px 20px rgba(255,59,59,0.12);}
+    button.btn.secondary{
+        background:transparent;
+        border:1px solid rgba(255,255,255,0.06);
+        color:var(--muted);
+        box-shadow:none;}
+
+    .controls-row{
+        display:flex;
+        gap:12px;
+        align-items:center;
+        justify-content:center;
+        flex-wrap:wrap;
+        margin-top:10px;}
+    .gallery {
+        padding:24px;
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap:20px;
+        perspective:1200px;}
+    .card{
+        background:var(--card-bg);
+        border-radius:var(--radius);
+        overflow:hidden;
+        box-shadow:0 6px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+        transition: transform .35s cubic-bezier(.2,.9,.3,1), box-shadow .35s;
+        transform-style:preserve-3d;
+        cursor:pointer;
+        display:flex;
+        flex-direction:column;
+        height:100%;
+        border:1px solid rgba(255,255,255,0.02);}
+    .thumb{
+        width:100%;
+        height:190px;
+        object-fit:cover;
+        display:block;
+        background:linear-gradient(180deg,rgba(0,0,0,0.15),transparent);}
+    .meta{
+        padding:12px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;gap:10px;}
+    .meta h4{
+        margin:0;
+        font-size:0.95rem;
+        color:var(--accent)}
+    .meta p{
+        margin:0;
+        font-size:0.85rem;
+        color:var(--muted)}
+    .card-actions{
+        padding:0 12px 12px;
+        display:flex;gap:8px;
+        align-items:center;
+        justify-content:space-between;}
+    .small-btn{
+        background:transparent;
+        border:1px solid rgba(255,255,255,0.06);
+        padding:6px 8px;border-radius:8px;
+        color:var(--muted);
+        cursor:pointer;}
+    .select-checkbox{
+        display:flex;
+        align-items:center;
+        gap:6px;
+        color:var(--muted);
+        cursor:pointer}
+    .notice{
+        text-align:center;
+        color:var(--muted);
+        padding:18px;
+        grid-column: 1 / -1;}
+    footer{text-align:center;
+        color:#8b96ad;
+        padding:18px 12px 36px;
+        border-top:1px solid rgba(255,255,255,0.02);
+        font-size:0.9rem;}
+
+    /* Zoom modal & compare */
+    #modal{
+        position:fixed;
+        inset:0;
+        display:none;
+        z-index:1200;
+        background:linear-gradient(180deg, rgba(2,4,8,0.9), rgba(2,4,8,0.96));
+        align-items:center;
+        justify-content:center;
+        padding:20px;}
+    .modal-inner{
+        width:100%;
+        max-width:1200px;
+        height:80vh;
+        background:transparent;
+        border-radius:12px;
+        display:flex;
+        gap:12px;}
+    .viewer-box{
+        flex:1;
+        background:var(--bg);
+        border-radius:10px;
+        overflow:hidden;
+        position:relative;
+        border:1px solid rgba(255,255,255,0.03);}
+    .modal-top{
+        position:absolute;
+        left:20px;top:18px;
+        z-index:1300;
+        display:flex;
+        gap:8px;
+        align-items:center;}
+    .close-btn{
+        position:absolute;
+        right:18px;top:18px;
+        z-index:1300;
+        background:var(--accent);
+        border:none;
+        color:white;
+        padding:8px 12px;
+        border-radius:8px;
+        cursor:pointer;}
+    @media (max-width:880px){.modal-inner{flex-direction:column;height:88vh}.viewer-box{height:50vh}}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Interative Space Atlas (ISA)</h1>
+  <p>Explore the images and conduct your analyses!</p>
+  <p>Analyze the images in more detail: zoom in, compare them side-by-side, or open them in a new tab.</p>
+</header>
+
+<div class="topbar">
+  <div class="control">
+    <label style="font-size:0.9rem;color:var(--muted);margin-right:8px">Select a Martian day:</label>
+    <input id="solInput" type="number" min="0" value="1000" />
+  </div>
+
+  <div class="select">
+    <label style="font-size:0.9rem;color:var(--muted);margin-right:8px">Camera / APOD:</label>
+    <select id="cameraFilter" style="background:transparent;border:none;color:inherit;outline:none;">
+      <option value="all">All</option>
+      <option value="apod">APOD</option>
+    </select>
+  </div>
+
+  <button class="btn" id="fetchBtn">Fetch photos</button>
+  <button class="btn secondary" id="toggleCompareBtn">Click to compare</button>
+</div>
+
+<div class="controls-row" style="justify-content:center">
+  <div style="color:var(--muted);font-size:0.9rem">Clique em 1 imagem para abrir zoom • marque 2 para comparar</div>
+</div>
+
+<main>
+  <section class="gallery" id="gallery"></section>
+</main>
+
+<div id="modal">
+  <div class="modal-inner">
+    <div class="viewer-box" id="viewerA"></div>
+    <div class="viewer-box" id="viewerB" style="display:none"></div>
+    <div class="modal-top"><div id="modalInfo" style="color:var(--muted)"></div></div>
+    <button class="close-btn" id="closeModal">Fechar</button>
+  </div>
+</div>
+
+<footer>
+  APIs usadas: <code>Mars Rover API + APOD</code> • Desenvolvido por BitGirls!
+</footer>
+
+<script>
+  const solInput = document.getElementById('solInput');
+  const fetchBtn = document.getElementById('fetchBtn');
+  const cameraFilter = document.getElementById('cameraFilter');
+  const gallery = document.getElementById('gallery');
+  const toggleCompareBtn = document.getElementById('toggleCompareBtn');
+  const modal = document.getElementById('modal');
+  const viewerAbox = document.getElementById('viewerA');
+  const viewerBbox = document.getElementById('viewerB');
+  const closeModalBtn = document.getElementById('closeModal');
+  const modalInfo = document.getElementById('modalInfo');
+
+  let currentPhotos = [];
+  let selectedForCompare = new Set();
+  let compareMode = false;
+  let osdViewerA = null;
+  let osdViewerB = null;
+  let lazyObserver = null;
+
+  function buildCard(photo){
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <img class="thumb" loading="lazy" data-src="${photo.img_src}" alt="${photo.title || 'Imagem'}" />
+      <div class="meta">
+        <div class="left">
+          <div>
+            <h4>${photo.camera?.full_name || photo.title}</h4>
+            <p>${photo.rover?.name || 'APOD'} • ${photo.sol || photo.date}</p>
+          </div>
+        </div>
+        <div style="text-align:right"><p>${photo.earth_date || photo.date}</p></div>
+      </div>
+      <div class="card-actions">
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="select-checkbox">
+            <input type="checkbox" class="compare-checkbox" />
+            <small style="color:var(--muted)">Compare</small>
+          </label>
+          <button class="small-btn open-btn">Abrir</button>
+          <a class="small-btn" href="${photo.img_src}" target="_blank" rel="noreferrer">Baixar</a>
+        </div>
+      </div>
+    `;
+
+    const openBtn = card.querySelector('.open-btn');
+    openBtn.addEventListener('click', e=>{ e.stopPropagation(); openModalSingle(photo); });
+
+    const checkbox = card.querySelector('.compare-checkbox');
+    checkbox.addEventListener('change', e=>{
+      if(e.target.checked) selectedForCompare.add(photo);
+      if(compareMode && selectedForCompare.size===2){
+        const [pA, pB] = Array.from(selectedForCompare);
+        openModalCompare(pA,pB);
+      }
+    });
+
+    card.addEventListener('click', e=>{
+      if(e.target.tagName.toLowerCase()!=='input') openModalSingle(photo);
+    });
+
+    return card;
+  }
+
+  function enableLazyLoad(){
+    const imgs = document.querySelectorAll('img.thumb[data-src]');
+    if('IntersectionObserver' in window){
+      if(lazyObserver) lazyObserver.disconnect();
+      lazyObserver = new IntersectionObserver((entries, obs)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            obs.unobserve(img);
+          }
+        });
+      }, {rootMargin:'200px'});
+      imgs.forEach(i=>lazyObserver.observe(i));
+    } else { imgs.forEach(i=>i.src=i.dataset.src); }
+  }
+
+  function renderGallery(photos){
+    gallery.innerHTML = '';
+    if(!photos.length){ gallery.innerHTML='<div class="notice">Nenhuma foto encontrada</div>'; return; }
+    photos.forEach(p=>gallery.appendChild(buildCard(p)));
+    enableLazyLoad();
+  }
+
+  function openModalSingle(photo){
+    modal.style.display='flex';
+    viewerBbox.style.display='none';
+    viewerAbox.style.display='block';
+    modalInfo.textContent = `${photo.camera?.full_name || photo.title} • ${photo.rover?.name || 'APOD'} • ${photo.earth_date || photo.date}`;
+    try{ if(osdViewerA) osdViewerA.destroy(); } catch(e){}
+    try{ if(osdViewerB) osdViewerB.destroy(); } catch(e){}
+    osdViewerA = OpenSeadragon({
+      element: viewerAbox,
+      prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/",
+      tileSources: { type:'image', url:photo.img_src },
+      gestureSettingsMouse:{clickToZoom:true,dblClickToZoom:true},
+      maxZoomPixelRatio:5,
+      showNavigator:true
+    });
+  }
+
+  function syncViewers(a,b){
+    let syncing=false;
+    function handler(source,target){ return function(){ if(syncing) return; syncing=true; try{ const c=source.viewport.getCenter(); const z=source.viewport.getZoom(); target.viewport.zoomTo(z,c,true); target.viewport.panTo(c,true);}catch(e){} syncing=false; }; }
+    a.addHandler('animation', handler(a,b));
+    b.addHandler('animation', handler(b,a));
+  }
+
+  function openModalCompare(pA,pB){
+    if(!pA||!pB) return;
+    modal.style.display='flex';
+    viewerBbox.style.display='block';
+    modalInfo.textContent=`Comparando: ${pA.title||pA.id} ↔ ${pB.title||pB.id}`;
+    try{ if(osdViewerA) osdViewerA.destroy(); } catch(e){}
+    try{ if(osdViewerB) osdViewerB.destroy(); } catch(e){}
+    osdViewerA = OpenSeadragon({element:viewerAbox,prefixUrl:"https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/",tileSources:{type:'image',url:pA.img_src},maxZoomPixelRatio:5,showNavigator:true});
+    osdViewerB = OpenSeadragon({element:viewerBbox,prefixUrl:"https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/",tileSources:{type:'image',url:pB.img_src},maxZoomPixelRatio:5,showNavigator:true});
+    setTimeout(()=>{try{syncViewers(osdViewerA,osdViewerB);}catch(e){}},600);
+  }
+
+  closeModalBtn.addEventListener('click', ()=>{
+    modal.style.display='none';
+    try{ if(osdViewerA) osdViewerA.destroy(); } catch(e){}
+    try{ if(osdViewerB) osdViewerB.destroy(); } catch(e){}
+    osdViewerA=osdViewerB=null;
+  });
+  window.addEventListener('keydown',e=>{if(e.key==='Escape') closeModalBtn.click();});
+
+  toggleCompareBtn.addEventListener('click', ()=>{
+    compareMode=!compareMode;
+    toggleCompareBtn.textContent=compareMode?'Comparar (ON)':'Modo Comparar';
+    if(!compareMode){ selectedForCompare.clear(); document.querySelectorAll('.compare-checkbox').forEach(cb=>cb.checked=false); }
+  });
+
+  async function fetchMars(sol){
+    const url=`https://mars-photos.herokuapp.com/api/v1/rovers/curiosity/photos?sol=${sol}`;
+    try{
+      const res=await fetch(url);
+      const j=await res.json();
+      return j.photos||[];
+    }catch(e){return[];}
+  }
+
+  async function fetchAPOD(){
+    const apiKey='UFdbXwfyBdB2huECO13sRapwFdZZm0KsZufFvNKB';
+    const url=`https://api.nasa.gov/planetary/apod=${apiKey}&count=5`;
+    try{ const res=await fetch(url); const j=await res.json(); return j.map(d=>({img_src:d.url,title:d.title,date:d.date})); }catch(e){return[];}
+  }
+
+  fetchBtn.addEventListener('click', async ()=>{
+    gallery.innerHTML='<div class="notice">Buscando fotos…</div>';
+    let photos=[];
+    if(cameraFilter.value==='apod'){
+      photos=await fetchAPOD();
+    } else {
+      const sol = solInput.value||1000;
+      photos=await fetchMars(sol);
+    }
+    currentPhotos=photos;
+    renderGallery(photos);
+    selectedForCompare.clear();
+  });
+</script>
+
+</body>
+</html>
