@@ -287,8 +287,8 @@
             <input type="checkbox" class="compare-checkbox" />
             <small style="color:var(--muted)">Compare</small>
           </label>
-          <button class="small-btn open-btn">Abrir</button>
-          <a class="small-btn" href="${photo.img_src}" target="_blank" rel="noreferrer">Baixar</a>
+          <button class="small-btn open-btn">Open</button>
+          <a class="small-btn" href="${photo.img_src}" target="_blank" rel="noreferrer">Image in a new tab</a>
         </div>
       </div>
     `;
@@ -332,7 +332,7 @@
 
   function renderGallery(photos){
     gallery.innerHTML = '';
-    if(!photos.length){ gallery.innerHTML='<div class="notice">Nenhuma foto encontrada</div>'; return; }
+    if(!photos.length){ gallery.innerHTML='<div class="notice">No photos found, please try another day.</div>'; return; }
     photos.forEach(p=>gallery.appendChild(buildCard(p)));
     enableLazyLoad();
   }
